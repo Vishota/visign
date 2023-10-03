@@ -1,4 +1,5 @@
 import * as jose from 'jose'
+import crypto from 'crypto'
 
 type SettingsJWT = {
     audience?:string|string[],
@@ -15,8 +16,9 @@ export type VisignPayload = jose.JWTPayload;
 export default class Visign {
     private _secret:Promise<jose.KeyLike|Uint8Array>;
 
-    constructor () {
-        this._secret = jose.generateSecret('HS256');
+    constructor (secretSeed?:number|string) {
+        if(secretSeed === undefined) this._secret = jose.generateSecret('HS256');
+        else this._secret = determinedSecret(secretSeed);
     }
 
     async sign(data:jose.JWTPayload, settings?: SettingsJWT):Promise<string> {
@@ -35,7 +37,17 @@ export default class Visign {
         }
         return jwt.sign(await this._secret);
     }
-    async verify(jwt:string):Promise<jose.JWTVerifyResult> {
-        return await jose.jwtVerify(jwt, await this._secret);
+    async verify(jwt:string):Promise<jose.JWTVerifyResult|false> {
+        try {
+            return await jose.jwtVerify(jwt, await this._secret);
+        } catch {
+            return false
+        }
     }
+}
+
+async function determinedSecret(seed:string|number):Promise<Uint8Array> {
+    const inputString = ''+seed;
+    const sha256Hash = crypto.createHash('sha256').update(inputString).digest('hex');
+    return Buffer.from(sha256Hash, 'hex');
 }
