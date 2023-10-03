@@ -1,4 +1,4 @@
-import Visign from "./src/Visign";
+import Visign from "../src/Visign";
 (async()=>{
     let signer1 = new Visign(1);
     let signer2 = new Visign(1);
